@@ -12,7 +12,7 @@
             background-color: #000; /* 底色 */
             background-image: url('./bg.svg');
             background-repeat: repeat;
-            background-size: 40px; /* 你可以調整這個數值來決定背景圖案的大小 */
+            background-size: 35px; /* 你可以調整這個數值來決定背景圖案的大小 */
             
             font-family: sans-serif;
             touch-action: none; 
@@ -86,8 +86,8 @@
             Bodies.rectangle(window.innerWidth + 50, window.innerHeight/2, 100, window.innerHeight, wallOptions)
         ]);
 
-        // SVG 物件載入 (01.svg - 05.svg)
-        const svgFiles = ['06.svg', '05.svg', '04.svg', '01.svg', '02.svg', '03.svg'];
+        // SVG 物件載入 (01.svg - 07.svg)
+        const svgFiles = ['06.svg', '05.svg', '07.svg', '04.svg', '01.svg', '02.svg', '03.svg'];
         svgFiles.forEach((fileName, index) => {
             const radius = 55 + Math.random() * 25;
             const body = Bodies.circle(
