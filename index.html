@@ -7,23 +7,22 @@
     <style>
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; background: #000; 
+            overflow: hidden; background: #000; /* 網頁背景全黑 */
             font-family: sans-serif;
         }
         canvas { display: block; }
         
-        /* 1. 桌機版阻擋訊息 */
+        /* 桌機版阻擋訊息 */
         #desktop-block {
-            display: none; /* 預設隱藏 */
+            display: none; 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #000; color: #fff; z-index: 2000;
             flex-direction: column; justify-content: center; align-items: center;
             text-align: center;
         }
-        #desktop-block h1 { font-size: 2rem; letter-spacing: 5px; margin-bottom: 20px; }
-        #desktop-block p { opacity: 0.7; }
+        #desktop-block h1 { font-size: 1.5rem; letter-spacing: 5px; margin-bottom: 20px; }
+        #desktop-block p { opacity: 0.5; font-size: 0.8rem; }
 
-        /* 當螢幕寬度大於 1024px 時顯示阻擋畫面 */
         @media (min-width: 1024px) {
             #desktop-block { display: flex; }
         }
@@ -31,9 +30,9 @@
         /* 啟動按鈕 UI */
         #start-btn {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 18px 36px; background: rgba(255,255,255,0.9); border: none; border-radius: 50px;
-            font-weight: bold; font-size: 1rem;
-            cursor: pointer; z-index: 100; box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+            padding: 18px 36px; background: #fff; border: none; border-radius: 50px;
+            font-weight: bold; font-size: 1rem; color: #000;
+            cursor: pointer; z-index: 100; box-shadow: 0 0 20px rgba(255,255,255,0.2);
             letter-spacing: 2px;
         }
     </style>
@@ -41,7 +40,7 @@
 <body>
 
     <div id="desktop-block">
-        <h1>📱💚💻🚫</h1>
+        <h1>🥲</h1>
         <p>MOBILE ONLY</p>
     </div>
 
@@ -50,7 +49,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 
     <script>
-        const { Engine, Render, Runner, Bodies, Composite, Events } = Matter;
+        const { Engine, Render, Runner, Bodies, Composite } = Matter;
 
         const engine = Engine.create();
         const world = engine.world;
@@ -65,12 +64,12 @@
                 width: window.innerWidth,
                 height: window.innerHeight,
                 wireframes: false,
-                background: 'hsl(0, 100%, 50%)', // 初始背景
+                background: '#000', // 渲染器背景全黑
                 pixelRatio: window.devicePixelRatio
             }
         });
 
-        // --- 牆壁設定 ---
+        // --- 邊界牆壁 ---
         const wallOptions = { isStatic: true, render: { visible: false } };
         Composite.add(world, [
             Bodies.rectangle(window.innerWidth/2, window.innerHeight + 50, window.innerWidth, 100, wallOptions),
@@ -79,7 +78,7 @@
             Bodies.rectangle(window.innerWidth + 50, window.innerHeight/2, 100, window.innerHeight, wallOptions)
         ]);
 
-        // --- SVG 物件生成 ---
+        // --- SVG 物件 ---
         const svgFiles = ['01.svg', '02.svg', '03.svg', '04.svg', '05.svg', '06.svg'];
         svgFiles.forEach((fileName, index) => {
             const radius = 55 + Math.random() * 25;
@@ -88,13 +87,13 @@
                 Math.random() * window.innerHeight,
                 radius,
                 {
-                    mass: 1 + (index * 2.5),
-                    restitution: 0.5 + (index * 0.1),
-                    frictionAir: 0.03,
+                    mass: 1 + (index * 2),
+                    restitution: 0.6, // 統一稍微彈一點
+                    frictionAir: 0.02,
                     render: {
                         sprite: {
                             texture: `./${fileName}`,
-                            xScale: (radius * 2) / 200,
+                            xScale: (radius * 2) / 200, // 假設 SVG 原始寬度為 200px
                             yScale: (radius * 2) / 200
                         }
                     }
@@ -103,19 +102,8 @@
             Composite.add(world, body);
         });
 
-        // --- 2. 背景顏色流變邏輯 (Hue Rotation) ---
-        let hue = 0;
-        function updateBackground() {
-            // 每一幀增加 Hue 數值
-            hue = (hue + 0.5) % 360; 
-            // Saturation 100%, Lightness 50% (確保顏色最飽和)
-            render.options.background = `hsl(${hue}, 100%, 50%)`;
-            requestAnimationFrame(updateBackground);
-        }
-
-        // --- 陀螺儀控制 ---
+        // --- 陀螺儀重力控制 ---
         function handleOrientation(event) {
-            // 微調靈敏度，讓移動更平滑
             engine.gravity.x = event.gamma / 15;
             engine.gravity.y = event.beta / 15;
         }
@@ -140,9 +128,6 @@
             Render.run(render);
             const runner = Runner.create();
             Runner.run(runner, engine);
-            
-            // 啟動背景流變
-            updateBackground();
         }
 
         window.addEventListener('resize', () => {
