@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vibe Coding - 物理碰撞藝術</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+        canvas { display: block; }
+        #permission-btn {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            padding: 15px 30px; background: #fff; border: none; border-radius: 50px;
+            font-weight: bold; cursor: pointer; z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="permission-btn">點擊開啟重力感應</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+    <script>
+        const { Engine, Render, Runner, Bodies, Composite, Mouse, MouseConstraint, Events } = Matter;
+
+        // --- 1. 基礎設定 ---
+        const engine = Engine.create();
+        const world = engine.world;
+        const permissionBtn = document.getElementById('permission-btn');
+        
+        // 關閉預設的垂直重力，我們要用陀螺儀控制
+        engine.gravity.y = 0;
+
+        const render = Render.create({
+            element: document.body,
+            engine: engine,
+            options: {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                wireframes: false, // 設為 false 才能顯示貼圖
+                background: 'transparent'
+            }
+        });
+
+        // --- 2. 建立邊界 (牆壁) ---
+        const wallOptions = { isStatic: true, render: { visible: false } };
+        const ground = Bodies.rectangle(window.innerWidth/2, window.innerHeight + 50, window.innerWidth, 100, wallOptions);
+        const ceiling = Bodies.rectangle(window.innerWidth/2, -50, window.innerWidth, 100, wallOptions);
+        const leftWall = Bodies.rectangle(-50, window.innerHeight/2, 100, window.innerHeight, wallOptions);
+        const rightWall = Bodies.rectangle(window.innerWidth + 50, window.innerHeight/2, 100, window.innerHeight, wallOptions);
+        Composite.add(world, [ground, ceiling, leftWall, rightWall]);
+
+        // --- 3. 建立 PNG 物件群 ---
+        // 這裡你可以自定義每個 PNG 的「重力(質量)」與「彈性」
+        const items = [
+            { src: 'https://via.placeholder.com/100/FF0000?text=A', mass: 5, bounce: 0.9 }, // 較重、超彈
+            { src: 'https://via.placeholder.com/80/00FF00?text=B', mass: 1, bounce: 0.2 },  // 較輕、不彈
+            { src: 'https://via.placeholder.com/120/0000FF?text=C', mass: 10, bounce: 0.5 }, // 沉重、中等彈
+            { src: 'https://via.placeholder.com/150/FFFF00?text=D', mass: 2, bounce: 1.2 }   // 輕盈、超強彈力
+        ];
+
+        items.forEach((item, i) => {
+            const radius = 40 + Math.random() * 20;
+            const body = Bodies.circle(
+                Math.random() * window.innerWidth, 
+                Math.random() * window.innerHeight, 
+                radius, 
+                {
+                    mass: item.mass,        // 質量 (影響碰撞衝擊力)
+                    restitution: item.bounce, // 彈性 (0 = 不彈, 1 = 完全彈性)
+                    friction: 0.1,          // 摩擦力
+                    render: {
+                        sprite: {
+                            texture: item.src, // 你的 PNG 檔案連結
+                            xScale: radius * 2 / 100, // 根據圖片原始大小縮放
+                            yScale: radius * 2 / 100
+                        }
+                    }
+                }
+            );
+            Composite.add(world, body);
+        });
+
+        // --- 4. 陀螺儀重力注入 ---
+        function handleOrientation(event) {
+            // beta: 前後傾斜 (-180 到 180)
+            // gamma: 左右傾斜 (-90 到 90)
+            const xGravity = event.gamma / 20; 
+            const yGravity = event.beta / 20;
+
+            engine.gravity.x = xGravity;
+            engine.gravity.y = yGravity;
+        }
+
+        // iOS 需要明確授權才能讀取陀螺儀
+        permissionBtn.addEventListener('click', () => {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                            startExperience();
+                        }
+                    });
+            } else {
+                // 非 iOS 裝置
+                window.addEventListener('deviceorientation', handleOrientation);
+                startExperience();
+            }
+        });
+
+        function startExperience() {
+            permissionBtn.style.display = 'none';
+            Render.run(render);
+            const runner = Runner.create();
+            Runner.run(runner, engine);
+        }
+
+        // 適應視窗大小改變
+        window.addEventListener('resize', () => {
+            render.canvas.width = window.innerWidth;
+            render.canvas.height = window.innerHeight;
+            // 牆壁位置也需要更新 (此處省略動態更新牆壁位置的代碼以保持簡潔)
+        });
+    </script>
+</body>
+</html>
