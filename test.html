@@ -3,16 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vibe Coding - 物理碰撞閃爍藝術</title>
+    <title>ϟ ϟ ϟ</title>
     <style>
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; 
             /* --- 背景設定 --- */
             background-color: #000; /* 初始底色 */
-            background-image: url('./bg.svg');
-            background-repeat: repeat;
-            background-size: 100px;
             /* 加上一個淡入動畫，讓顏色切換看起來更滑順一點點 */
             transition: background-color 0.1s linear; 
             
@@ -97,7 +94,7 @@
         ]);
 
         // --- 2. 建立 SVG 物件 (01.svg - 05.svg) ---
-        const svgFiles = ['01.svg', '02.svg', '03.svg', '04.svg', '05.svg'];
+        const svgFiles = ['06.svg', '07.svg', '01.svg', '02.svg', '03.svg', '04.svg', '05.svg'];
         svgFiles.forEach((fileName, index) => {
             const radius = 55 + Math.random() * 25;
             const body = Bodies.circle(
