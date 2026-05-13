@@ -7,12 +7,12 @@
     <style>
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; background: #000; /* 網頁背景全黑 */
+            overflow: hidden; background: #000; 
             font-family: sans-serif;
+            touch-action: none; /* 關鍵：防止手指觸碰時網頁發生滾動 */
         }
         canvas { display: block; }
         
-        /* 桌機版阻擋訊息 */
         #desktop-block {
             display: none; 
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -20,14 +20,11 @@
             flex-direction: column; justify-content: center; align-items: center;
             text-align: center;
         }
-        #desktop-block h1 { font-size: 1.5rem; letter-spacing: 5px; margin-bottom: 20px; }
-        #desktop-block p { opacity: 0.5; font-size: 0.8rem; }
 
         @media (min-width: 1024px) {
             #desktop-block { display: flex; }
         }
 
-        /* 啟動按鈕 UI */
         #start-btn {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             padding: 18px 36px; background: #fff; border: none; border-radius: 50px;
@@ -44,12 +41,13 @@
         <p>MOBILE ONLY</p>
     </div>
 
-    <button id="start-btn">ϟϟϟ</button>
+    <button id="start-btn">按下允許就對ㄌ</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 
     <script>
-        const { Engine, Render, Runner, Bodies, Composite } = Matter;
+        // 1. 引入 Mouse 與 MouseConstraint
+        const { Engine, Render, Runner, Bodies, Composite, Mouse, MouseConstraint } = Matter;
 
         const engine = Engine.create();
         const world = engine.world;
@@ -64,12 +62,11 @@
                 width: window.innerWidth,
                 height: window.innerHeight,
                 wireframes: false,
-                background: '#000', // 渲染器背景全黑
+                background: '#000',
                 pixelRatio: window.devicePixelRatio
             }
         });
 
-        // --- 邊界牆壁 ---
         const wallOptions = { isStatic: true, render: { visible: false } };
         Composite.add(world, [
             Bodies.rectangle(window.innerWidth/2, window.innerHeight + 50, window.innerWidth, 100, wallOptions),
@@ -78,7 +75,6 @@
             Bodies.rectangle(window.innerWidth + 50, window.innerHeight/2, 100, window.innerHeight, wallOptions)
         ]);
 
-        // --- SVG 物件 ---
         const svgFiles = ['01.svg', '02.svg', '03.svg', '04.svg', '05.svg', '06.svg'];
         svgFiles.forEach((fileName, index) => {
             const radius = 55 + Math.random() * 25;
@@ -88,12 +84,12 @@
                 radius,
                 {
                     mass: 1 + (index * 2),
-                    restitution: 0.6, // 統一稍微彈一點
+                    restitution: 0.6,
                     frictionAir: 0.02,
                     render: {
                         sprite: {
                             texture: `./${fileName}`,
-                            xScale: (radius * 2) / 200, // 假設 SVG 原始寬度為 200px
+                            xScale: (radius * 2) / 200,
                             yScale: (radius * 2) / 200
                         }
                     }
@@ -102,10 +98,26 @@
             Composite.add(world, body);
         });
 
-        // --- 陀螺儀重力控制 ---
         function handleOrientation(event) {
             engine.gravity.x = event.gamma / 15;
             engine.gravity.y = event.beta / 15;
+        }
+
+        // --- 核心更新：加入觸控互動 ---
+        function addTouchControl() {
+            const mouse = Mouse.create(render.canvas);
+            const mouseConstraint = MouseConstraint.create(engine, {
+                mouse: mouse,
+                constraint: {
+                    stiffness: 0.2, // 抓取的僵硬度，越低越像有條彈力繩牽著
+                    render: { visible: false } // 不顯示抓取時的連線，保持視覺乾淨
+                }
+            });
+
+            Composite.add(world, mouseConstraint);
+
+            // 確保觸控事件在畫布上能正常運作
+            render.mouse = mouse;
         }
 
         startBtn.addEventListener('click', () => {
@@ -124,6 +136,9 @@
         function initApp() {
             startBtn.style.display = 'none';
             window.addEventListener('deviceorientation', handleOrientation);
+            
+            // 啟動觸控控制
+            addTouchControl();
             
             Render.run(render);
             const runner = Runner.create();
