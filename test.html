@@ -11,7 +11,7 @@
             /* 背景預設全黑 */
             background-color: #000;
             /* 控制顏色淡回黑色的速度：0.4秒，使用 ease-out 讓效果更自然 */
-            transition: background-color 0.4s ease-out; 
+            transition: background-color 0.1s ease-out; 
             
             font-family: sans-serif;
             touch-action: none; 
@@ -51,7 +51,7 @@
         <p>MOBILE ONLY</p>
     </div>
 
-    <button id="start-btn">START</button>
+    <button id="start-btn">S T A R T</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 
@@ -131,13 +131,13 @@
         function triggerFlash() {
             // 1. 移除過渡動畫，讓變白是瞬發的 (Flash)
             document.body.style.transition = 'none';
-            document.body.style.backgroundColor = '#fff';
+            document.body.style.backgroundColor = '#313131';
             
             // 2. 強制瀏覽器重繪 (Reflow) 以套用瞬間的白色
             document.body.offsetHeight; 
             
             // 3. 重新加上過渡動畫，並設定回黑色 (Fade out)
-            document.body.style.transition = 'background-color 0.4s ease-out';
+            document.body.style.transition = 'background-color 0.1s ease-out';
             document.body.style.backgroundColor = '#000';
         }
 
