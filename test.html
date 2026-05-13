@@ -8,10 +8,10 @@
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; 
-            /* --- 背景設定 --- */
-            background-color: #000; /* 初始底色 */
-            /* 加上一個淡入動畫，讓顏色切換看起來更滑順一點點 */
-            transition: background-color 0.1s linear; 
+            /* 背景預設全黑 */
+            background-color: #000;
+            /* 控制顏色淡回黑色的速度：0.4秒，使用 ease-out 讓效果更自然 */
+            transition: background-color 0.4s ease-out; 
             
             font-family: sans-serif;
             touch-action: none; 
@@ -39,33 +39,29 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             padding: 18px 36px; background: #fff; border: none; border-radius: 50px;
             font-weight: bold; font-size: 1rem; color: #000;
-            cursor: pointer; z-index: 100; box-shadow: 0 0 30px rgba(255,255,255,0.4);
+            cursor: pointer; z-index: 100; box-shadow: 0 0 30px rgba(255,255,255,0.3);
             letter-spacing: 2px;
-            transition: all 0.2s;
         }
-        #start-btn:active { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
     </style>
 </head>
 <body>
 
     <div id="desktop-block">
-        <h1>請使用手機遊玩</h1>
-        <p>MOBILE ONLY EXPERIENCE</p>
+        <h1>📱🙏</h1>
+        <p>MOBILE ONLY</p>
     </div>
 
-    <button id="start-btn">start</button>
+    <button id="start-btn">START</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 
     <script>
-        // 核心模組引入
         const { Engine, Render, Runner, Bodies, Composite, Mouse, MouseConstraint, Events } = Matter;
 
         const engine = Engine.create();
         const world = engine.world;
         const startBtn = document.getElementById('start-btn');
         
-        // 關閉初始重力
         engine.gravity.y = 0;
 
         const render = Render.create({
@@ -75,26 +71,22 @@
                 width: window.innerWidth,
                 height: window.innerHeight,
                 wireframes: false,
-                background: 'transparent', // 保持畫布透明
+                background: 'transparent',
                 pixelRatio: window.devicePixelRatio
             }
         });
 
-        // --- 1. 建立並標記邊界牆壁 ---
-        const wallOptions = { 
-            isStatic: true, 
-            label: 'wall', // 關鍵：加上標記，方便在碰撞事件中識別
-            render: { visible: false } 
-        };
+        // --- 1. 建立邊界 ---
+        const wallOptions = { isStatic: true, label: 'wall', render: { visible: false } };
         Composite.add(world, [
-            Bodies.rectangle(window.innerWidth/2, window.innerHeight + 50, window.innerWidth, 100, wallOptions), // 地板
-            Bodies.rectangle(window.innerWidth/2, -50, window.innerWidth, 100, wallOptions), // 天花板
-            Bodies.rectangle(-50, window.innerHeight/2, 100, window.innerHeight, wallOptions), // 左牆
-            Bodies.rectangle(window.innerWidth + 50, window.innerHeight/2, 100, window.innerHeight, wallOptions) // 右牆
+            Bodies.rectangle(window.innerWidth/2, window.innerHeight + 50, window.innerWidth, 100, wallOptions),
+            Bodies.rectangle(window.innerWidth/2, -50, window.innerWidth, 100, wallOptions),
+            Bodies.rectangle(-50, window.innerHeight/2, 100, window.innerHeight, wallOptions),
+            Bodies.rectangle(window.innerWidth + 50, window.innerHeight/2, 100, window.innerHeight, wallOptions)
         ]);
 
         // --- 2. 建立 SVG 物件 (01.svg - 05.svg) ---
-        const svgFiles = ['06.svg', '07.svg', '01.svg', '02.svg', '03.svg', '04.svg', '05.svg'];
+        const svgFiles = ['06.svg','07.svg', '01.svg', '02.svg', '03.svg', '04.svg', '05.svg'];
         svgFiles.forEach((fileName, index) => {
             const radius = 55 + Math.random() * 25;
             const body = Bodies.circle(
@@ -102,14 +94,14 @@
                 Math.random() * window.innerHeight,
                 radius,
                 {
-                    label: 'object', // 標記為可動物件
+                    label: 'object',
                     mass: 1 + (index * 2),
-                    restitution: 0.8, // 增加彈性，讓碰撞更有感
-                    frictionAir: 0.01, // 減少阻力
+                    restitution: 0.7, 
+                    frictionAir: 0.02,
                     render: {
                         sprite: {
                             texture: `./${fileName}`,
-                            xScale: (radius * 2) / 200, // 假設 SVG 原始寬度為 200px
+                            xScale: (radius * 2) / 200,
                             yScale: (radius * 2) / 200
                         }
                     }
@@ -118,87 +110,72 @@
             Composite.add(world, body);
         });
 
-        // --- 3. 核心功能：隨機 HEX 色碼生成器 ---
-        function getRandomHexColor() {
-            // 生成一個隨機整數，並轉化為 16 進位字串
-            const randomColor = Math.floor(Math.random()*16777215).toString(16);
-            // 確保字串長度為 6 (在前面補 0)，並加上 # 號
-            return "#" + randomColor.padStart(6, '0');
-        }
-
-        // --- 4. 核心功能：監聽碰撞事件並改變背景 ---
+        // --- 3. 核心功能：白色閃爍邏輯 ---
         function addCollisionFlasher() {
-            // 監聽「碰撞開始」事件
             Events.on(engine, 'collisionStart', (event) => {
-                const pairs = event.pairs; // 取得所有發生的碰撞對
-
-                // 遍歷所有碰撞對
+                const pairs = event.pairs;
                 for (let i = 0, j = pairs.length; i < j; ++i) {
                     const pair = pairs[i];
 
-                    // 檢查這對碰撞中，是否其中一個是牆壁，另一個是物件
+                    // 檢查是否為物件與牆壁碰撞
                     if (
                         (pair.bodyA.label === 'wall' && pair.bodyB.label === 'object') ||
                         (pair.bodyA.label === 'object' && pair.bodyB.label === 'wall')
                     ) {
-                        // 如果發生物件撞牆，生成一個隨機顏色
-                        const newColor = getRandomHexColor();
-                        // 修改網頁 Body 的背景顏色
-                        // (因為 Canvas 是透明的，所以這裡的顏色會透過 bg.svg 顯示出來)
-                        document.body.style.backgroundColor = newColor;
+                        triggerFlash();
                     }
                 }
             });
         }
 
-        // 陀螺儀控制
+        function triggerFlash() {
+            // 1. 移除過渡動畫，讓變白是瞬發的 (Flash)
+            document.body.style.transition = 'none';
+            document.body.style.backgroundColor = '#fff';
+            
+            // 2. 強制瀏覽器重繪 (Reflow) 以套用瞬間的白色
+            document.body.offsetHeight; 
+            
+            // 3. 重新加上過渡動畫，並設定回黑色 (Fade out)
+            document.body.style.transition = 'background-color 0.4s ease-out';
+            document.body.style.backgroundColor = '#000';
+        }
+
+        // 陀螺儀與觸控
         function handleOrientation(event) {
-            engine.gravity.x = event.gamma / 12; // 提高一點靈敏度
+            engine.gravity.x = event.gamma / 12;
             engine.gravity.y = event.beta / 12;
         }
 
-        // 觸控控制
         function addTouchControl() {
             const mouse = Mouse.create(render.canvas);
             const mouseConstraint = MouseConstraint.create(engine, {
                 mouse: mouse,
-                constraint: {
-                    stiffness: 0.2,
-                    render: { visible: false }
-                }
+                constraint: { stiffness: 0.2, render: { visible: false } }
             });
             Composite.add(world, mouseConstraint);
             render.mouse = mouse;
         }
 
-        // 啟動按鈕邏輯
         startBtn.addEventListener('click', () => {
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission()
                     .then(permissionState => {
-                        if (permissionState === 'granted') {
-                            initApp();
-                        }
+                        if (permissionState === 'granted') { initApp(); }
                     });
-            } else {
-                initApp();
-            }
+            } else { initApp(); }
         });
 
         function initApp() {
             startBtn.style.display = 'none';
             window.addEventListener('deviceorientation', handleOrientation);
             addTouchControl();
-            
-            // 啟動碰撞閃爍功能
             addCollisionFlasher();
-            
             Render.run(render);
             const runner = Runner.create();
             Runner.run(runner, engine);
         }
 
-        // 視窗大小適應
         window.addEventListener('resize', () => {
             render.canvas.width = window.innerWidth;
             render.canvas.height = window.innerHeight;
